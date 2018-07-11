@@ -53,7 +53,7 @@ spec:
                 error "Failed functional tests"
             } finally {
                 container("helm") {
-                    sh """ finally """
+                    sh """ echo finally """
                 }
             }
         }
