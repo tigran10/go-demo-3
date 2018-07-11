@@ -8,7 +8,7 @@ env.USERNAME="tigran10"
 
 env.REPO = "https://github.com/${env.USERNAME}/go-demo-3.git" // Replace me
 env.IMAGE = "${DH_USER}/go-demo-3" // Replace me
-env.ADDRESS = "go-demo-3-${env.BUILD_NUMBER}-${env.BRANCH_NAME}.acme.com" // Replace `acme.com` with the $ADDR retrieved earlier
+env.ADDRESS = "go-demo-3-${env.BUILD_NUMBER}-${env.BRANCH_NAME}.127.0.0.1.nip.io" // Replace `acme.com` with the $ADDR retrieved earlier
 env.TAG_BETA = "${currentBuild.displayName}-${env.BRANCH_NAME}"
 env.CHART_NAME = "go-demo-3-${env.BUILD_NUMBER}-${env.BRANCH_NAME}"
 
@@ -38,15 +38,8 @@ spec:
     node("docker") {
         stage("build") {
             git "${env.REPO}"
-            sh """sudo docker image build -t ${env.IMAGE}:${env.TAG_BETA} ."""
-            withCredentials([usernamePassword(
-                    credentialsId: "docker",
-                    usernameVariable: "USER",
-                    passwordVariable: "PASS"
-            )]) {
-                sh """sudo docker login -u $USER -p $PASS"""
-            }
-            sh """sudo docker image push ${env.IMAGE}:${env.TAG_BETA}"""
+
+            sh """sudo docker version"""
         }
     }
 
@@ -54,31 +47,13 @@ spec:
         stage("func-test") {
             try {
                 container("helm") {
-                    git "${env.REPO}"
-                    sh """helm upgrade \
-            ${env.CHART_NAME} \
-            helm/go-demo-3 -i \
-            --tiller-namespace go-demo-3-build \
-            --set image.tag=${env.TAG_BETA} \
-            --set ingress.host=${env.ADDRESS}"""
-                }
-                container("kubectl") {
-                    sh """kubectl -n go-demo-3-build \
-            rollout status deployment \
-            ${env.CHART_NAME}"""
-                }
-                container("golang") { // Uses env ADDRESS
-                    sh "go get -d -v -t"
-                    sh """go test ./... -v \
-            --run FunctionalTest"""
+                    sh " echo helming here"
                 }
             } catch(e) {
                 error "Failed functional tests"
             } finally {
                 container("helm") {
-                    sh """helm delete ${env.CHART_NAME} \
-            --tiller-namespace go-demo-3-build \
-            --purge"""
+                    sh """ finally """
                 }
             }
         }
