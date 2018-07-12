@@ -37,76 +37,15 @@ spec:
 """
 ) {
 
-    node("docker") {
-        stage("build") {
-            def scmVars = checkout scm
-            def commitHash = scmVars.GIT_COMMIT
-            def shortGitCommit = "${commitHash[0..10]}"
+    node {
+        def currentVersion  = sh (
+                        script: 'git tag -l | tail -n1',
+                        returnStdout: true).trim()
 
-            stash name: 'source', useDefaultExcludes: false
+        def elvisOutput = currentVersion ?: 'Viva Las Vegas!'
 
-            withCredentials([usernamePassword(
-                    credentialsId: "docker",
-                    usernameVariable: "USER",
-                    passwordVariable: "PASS"
-            )]) {
-                sh """ sudo docker login -u $USER -p $PASS """
-                sh """ ./build_docker.sh -n ${env.IMAGE} -t ${env.TAG_BETA} -t ${shortGitCommit} -l -p -i . """
-            }
-        }
+        echo "$elvisOutput"
     }
 
-    node(env.BUILDER_POD) {
 
-
-        stage("func-test") {
-            try {
-                unstash 'source'
-
-                container("helm") {
-                    sh """helm upgrade \
-            ${env.CHART_NAME} \
-            helm/go-demo-3 -i \
-            --tiller-namespace go-demo-3-build \
-            --set image.tag=${env.TAG_BETA} \
-            --set ingress.host=${env.ADDRESS}"""
-                }
-                container("kubectl") {
-                    sh """kubectl -n go-demo-3-build \
-            rollout status deployment \
-            ${env.CHART_NAME}"""
-                }
-                container("golang") { // Uses env ADDRESS
-                    sh "go get -d -v -t"
-                    sh """go test ./... -v \
-            --run FunctionalTest"""
-                }
-            } catch (e) {
-                error "Failed functional tests"
-            } finally {
-                container("helm") {
-                    sh """helm delete ${env.CHART_NAME} \
-            --tiller-namespace go-demo-3-build \
-            --purge"""
-                }
-            }
-        }
-
-        node("docker") {
-            stage("release") {
-                sh """sudo docker pull ${env.IMAGE}:${env.TAG_BETA}"""
-                sh """sudo docker image tag ${env.IMAGE}:${env.TAG_BETA} ${env.IMAGE}:${env.TAG}"""
-                sh """sudo docker image tag ${env.IMAGE}:${env.TAG_BETA} ${env.IMAGE}:latest"""
-                withCredentials([usernamePassword(
-                        credentialsId: "docker",
-                        usernameVariable: "USER",
-                        passwordVariable: "PASS"
-                )]) {
-                    sh """sudo docker login -u $USER -p $PASS"""
-                }
-                sh """sudo docker image push ${env.IMAGE}:${env.TAG}"""
-                sh """sudo docker image push ${env.IMAGE}:latest"""
-            }
-        }
-    }
 }
