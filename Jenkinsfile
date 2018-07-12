@@ -40,6 +40,7 @@ spec:
     node {
         checkout scm
 
+        sh "git fetch origin 'refs/tags/*:refs/tags/*'"
         def currentVersion  = sh ( script: 'git tag -l | tail -n1', returnStdout: true ).trim() ?: '1.0.0'
         echo "$currentVersion"
     }
