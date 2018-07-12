@@ -40,13 +40,8 @@ spec:
     node {
         checkout scm
 
-        def currentVersion  = sh (
-                        script: 'git tag -l | tail -n1',
-                        returnStdout: true).trim()
-
-        def elvisOutput = currentVersion ?: 'Viva Las Vegas!'
-
-        echo "$elvisOutput"
+        def currentVersion  = sh ( script: 'git tag -l | tail -n1', returnStdout: true ).trim() ?: '1.0.0'
+        echo "$currentVersion"
     }
 
 
