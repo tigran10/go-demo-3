@@ -41,8 +41,18 @@ spec:
         checkout scm
 
         sh "git fetch origin 'refs/tags/*:refs/tags/*'"
-        def currentVersion  = sh ( script: 'git tag -l | tail -n1', returnStdout: true ).trim() ?: '1.0.0'
-        echo "$currentVersion"
+        def version  = sh ( script: 'git tag -l | tail -n1', returnStdout: true ).trim() ?: '1.0.0'
+
+        echo version
+
+        def parser = /(?<major>\d+).(?<minor>\d+).(?<revision>\d+)/
+        def match = version =~ parser
+        match.matches()
+        def (int major, int minor, int revision) = ['major', 'minor', 'revision'].collect { match.group(it) }
+
+        def newVersion = "${ major + "." + minor + "." + (revision+ 1) }"
+
+        echo newVersion
     }
 
 
