@@ -48,9 +48,9 @@ spec:
         def parser = /(?<major>\d+).(?<minor>\d+).(?<revision>\d+)/
         def match = version =~ parser
         match.matches()
-        def (int major, int minor, int revision) = ['major', 'minor', 'revision'].collect { match.group(it) }
+        def (major, minor, revision) = ['major', 'minor', 'revision'].collect { match.group(it) }
 
-        def newVersion = "${ major + "." + minor + "." + (revision+ 1) }"
+        def newVersion = "${ major + "." + minor + "." + (revision.toInteger() + 1) }"
 
         echo newVersion
     }
