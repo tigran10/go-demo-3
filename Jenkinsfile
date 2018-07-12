@@ -38,6 +38,8 @@ spec:
 ) {
 
     node {
+        checkout scm
+
         def currentVersion  = sh (
                         script: 'git tag -l | tail -n1',
                         returnStdout: true).trim()
